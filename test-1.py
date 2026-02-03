@@ -8,7 +8,7 @@ client = OpenAI(
 response = client.chat.completions.create(
     model="llama3.1:8b",
     messages=[{"role": "user", "content": "現在の最新の西暦について教えて"}],
-    temperature=0 # 質問に対しての揺らぎ , 0 => なし , 値が大きいと揺らぐ（確定的ではない）　デフォルト 0.3
+    temperature=0.3 # 質問に対しての揺らぎ , 0 => なし , 値が大きいと揺らぐ（確定的ではない）　デフォルト 1
 )
 
 ### 結果出力 ###
