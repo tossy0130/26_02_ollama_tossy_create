@@ -4,6 +4,7 @@ from openai import OpenAI
 # ページタイトル
 st.set_page_config(page_title="ローカル LLM Chat")
 
+st.sidebar.title("Tossy ローカル LLM")
 st.sidebar.title("設定")
 model = st.sidebar.text_input("モデル名", value="llama3.1:8b")
 temperature = st.sidebar.slider("temperature", 0.0, 2.0, 0.3, 0.1)
@@ -11,6 +12,21 @@ system_prompt = st.sidebar.text_area(
     "System Prompt",
     "あなたの有能なアシスタントです。日本語で回答してください。"
 )
+
+# 会話の履歴を保管
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+# 会話の履歴を削除（リセット）ボタン
+if st.sidebar.button("会話をリセット"):
+    st.session_state.messages = []
+    
+# 会話の履歴を表示
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]):
+        st.write(m["content"])
+
 
 prompt = st.chat_input("メッセージを入力")
 
@@ -24,7 +40,11 @@ client = OpenAI(
 # print("response全体：", response)
 # print("テキスト抽出：", response.choices[0].message.content)
 
+# プロンプトが空じゃない場合
 if prompt:
+    #　ユーザ側のメッセージ表示
+    with st.chat_message("user"):
+        st.write(prompt)
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -34,6 +54,14 @@ if prompt:
         temperature=temperature,
     )
 
-    st.write(response.choices[0].message.content)
+    # エージェント側のメッセージ表示
+    with st.chat_message("assistant"):
+        st.write(response.choices[0].message.content)
+        
+    ### 履歴格納
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
+
+# プロンプトが空の場合
 else:
     st.info("メッセージを入力して送信してください。")
