@@ -42,25 +42,45 @@ client = OpenAI(
 
 # プロンプトが空じゃない場合
 if prompt:
+    
+    # 履歴格納
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
     #　ユーザ側のメッセージ表示
     with st.chat_message("user"):
         st.write(prompt)
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=temperature,
-    )
+        
+    # システムプロンプト処理
+    if system_prompt.strip():
+        messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
+    else:
+        messages = st.session_state.messages
 
     # エージェント側のメッセージ表示
     with st.chat_message("assistant"):
-        st.write(response.choices[0].message.content)
+        
+        # 上書き表示用
+        placeholder = st.empty()
+        
+        # 表示用
+        stream_response = ""
+        
+        stream = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            stream=True
+        )
+        
+        # 格納
+        for chunk in stream:
+            stream_response += chunk.choices[0].delta.content
+            placeholder.write(stream_response) # 上書き表示
+          #  st.write(stream_response)
+        
         
     ### 履歴格納
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
+    st.session_state.messages.append({"role": "assistant", "content": stream_response})
 
 # プロンプトが空の場合
 else:
